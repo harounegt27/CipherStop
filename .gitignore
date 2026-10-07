@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.dvc/
+data/
+*.egg-info/
+.env
+mlruns/

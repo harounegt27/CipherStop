@@ -1,0 +1,12 @@
+pyspark==3.5.3
+pandas==2.2.3
+numpy==1.26.4
+scikit-learn==1.5.2
+torch==2.4.1
+mlflow==2.16.2
+great-expectations==0.18.19
+dvc==3.55.2
+fastapi==0.115.4
+uvicorn==0.32.0
+pyarrow==17.0.0
+python-dotenv==1.0.1
