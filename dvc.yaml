@@ -1,0 +1,37 @@
+stages:
+  preprocess:
+    cmd: python src/pipeline/preprocess.py
+    deps:
+      - src/pipeline/preprocess.py
+    params:
+      - params.yaml:
+          - preprocess.cuts
+          - preprocess.zero_day
+    outs:
+      - data/processed/10pct
+      - data/processed/25pct
+      - data/processed/50pct
+      - data/processed/75pct
+      - data/processed/zero_day
+
+  validate:
+    cmd: python src/pipeline/validate.py
+    deps:
+      - src/pipeline/validate.py
+      - data/processed
+    outs:
+      - data/validated
+
+  train:
+    cmd: python src/model/train.py
+    deps:
+      - src/model/train.py
+      - data/processed
+    params:
+      - params.yaml:
+          - train.epochs
+          - train.batch_size
+          - train.learning_rate
+    metrics:
+      - metrics.json:
+          cache: false
