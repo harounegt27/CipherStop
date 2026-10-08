@@ -1,9 +1,19 @@
+# Data — never stored locally
+data/processed/*
+data/validated/*
+!data/**/.gitkeep
+
+
+# MLflow
+mlruns/
+
+# Environment
+.env
+.venv/
+venv/
+env/
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
-.git/
-.dvc/
-data/
-*.egg-info/
-.env
-mlruns/
