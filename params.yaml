@@ -1,0 +1,10 @@
+preprocess:
+  cuts: [10, 25, 50, 75]
+  zero_day: true
+  input_path: /kaggle/input/ransmap-2024-ransomware-behavioral-features/
+
+train:
+  epochs: 50
+  batch_size: 64
+  learning_rate: 0.001
+  model: lstm
