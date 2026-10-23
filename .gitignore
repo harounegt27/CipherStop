@@ -17,3 +17,7 @@ env/
 __pycache__/
 *.pyc
 *.pyo
+
+/tasks resum
+
+!.dvc
