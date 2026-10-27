@@ -17,3 +17,9 @@ env/
 __pycache__/
 *.pyc
 *.pyo
+
+
+# MLflow
+mlflow/mlflow.db
+mlflow/artifacts/*
+!mlflow/.gitkeep
