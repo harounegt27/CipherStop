@@ -8,3 +8,7 @@ train:
   batch_size: 64
   learning_rate: 0.001
   model: lstm
+
+mlflow:
+  tracking_uri: http://localhost:5000
+  experiment_name: cipherstop-ransomware-detection
