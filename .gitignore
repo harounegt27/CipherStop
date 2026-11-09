@@ -22,4 +22,10 @@ __pycache__/
 # MLflow
 mlflow/mlflow.db
 mlflow/artifacts/*
-!mlflow/.gitkeep
+!mlflow/.gitkeepdata/
+checkpoints/
+mlruns/
+mlartifacts/
+mlflow.db
+.venv/
+__pycache__/
