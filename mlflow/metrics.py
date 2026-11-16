@@ -6,7 +6,7 @@ from mlflow.tracking import MlflowClient
 EXPERIMENT_NAME = "RanS-MAP"   # doit être IDENTIQUE à import_to_mlflow.py
 CSV_PATH = Path(__file__).resolve().parent.parent / "src" / "results" / "results_gru_lstm.csv"
 
-mlflow.set_tracking_uri("http://localhost:5000")
+mlflow.set_tracking_uri("http://mlflow:5000")
 client = MlflowClient()
 
 exp = client.get_experiment_by_name(EXPERIMENT_NAME)
