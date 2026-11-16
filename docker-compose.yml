@@ -4,7 +4,7 @@ services:
   dev:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: docker/DockerFile
     container_name: cipherstop_dev
     volumes:
       - .:/app

@@ -3,7 +3,7 @@ import mlflow
 from pathlib import Path
 from mlflow.tracking import MlflowClient
 
-mlflow.set_tracking_uri("http://localhost:5000")
+mlflow.set_tracking_uri("http://mlflow:5000")
 client = MlflowClient()
 exp = client.get_experiment_by_name("RanS-MAP")
 ROOT = Path(__file__).resolve().parent.parent

@@ -1,7 +1,7 @@
 import mlflow
 import matplotlib.pyplot as plt
 
-mlflow.set_tracking_uri("http://localhost:5000")
+mlflow.set_tracking_uri("http://mlflow:5000")
 
 df = mlflow.search_runs(experiment_names=["RanS-MAP"])
 
