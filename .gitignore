@@ -1,0 +1,25 @@
+# Data — never stored locally
+data/processed/*
+data/validated/*
+!data/**/.gitkeep
+
+
+# MLflow
+mlruns/
+
+# Environment
+.env
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+
+# MLflow
+mlflow/mlflow.db
+mlflow/artifacts/*
+!mlflow/.gitkeep
