@@ -23,3 +23,9 @@ __pycache__/
 mlflow/mlflow.db
 mlflow/artifacts/*
 !mlflow/.gitkeep
+mlflow.db
+backend/mlflow.db
+
+# Spark outputs
+inference_output/
+spark_test_parquet/

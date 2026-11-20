@@ -1,6 +1,6 @@
+
 import os
 import time
-
 from pyspark.sql import functions as F
 from pyspark.sql.types import (
     StructType,
@@ -9,13 +9,6 @@ from pyspark.sql.types import (
     DoubleType
 )
 
-
-
-RAW_ROOT = (
-    "/kaggle/input/datasets/hiranomanabu/"
-    "ransmap-2024-ransomware-behavioral-features/"
-    "RanSMAP/dataset"
-)
 
 STREAMS = [
     "ata_read",
@@ -34,7 +27,6 @@ HAS_ENTROPY = {
 
 WINDOW_S = 1.0
 
-
 EVENT_SCHEMA = StructType([
     StructField("sec", LongType(), True),
     StructField("ns", DoubleType(), True),
@@ -45,112 +37,33 @@ EVENT_SCHEMA = StructType([
 ])
 
 
-
-
-def get_rel_dirs(exec_df):
-
-    if hasattr(exec_df, "columns") and "rel_dir" in exec_df.columns:
-
-        # Pandas DataFrame
-        if hasattr(exec_df, "to_dict"):
-            return (
-                exec_df["rel_dir"]
-                .dropna()
-                .astype(str)
-                .drop_duplicates()
-                .tolist()
-            )
-
-        # Spark DataFrame
-        return [
-            row["rel_dir"]
-            for row in (
-                exec_df
-                .select("rel_dir")
-                .distinct()
-                .collect()
-            )
-        ]
-
-    raise ValueError(
-        "exec_df must contain a rel_dir column."
-    )
-
-
-
-def ingest_stream(stream, exec_df, spark, out_root):
+def ingest_stream(stream, spark, raw_root, out_root, execution_id):
 
     start_time = time.time()
 
     print(f"\nProcessing stream: {stream}")
 
-    rel_dirs = get_rel_dirs(exec_df)
+    csv_path = os.path.join(
+        raw_root,
+        f"{stream}.csv"
+    )
 
-    if not rel_dirs:
-        raise ValueError("No execution directories found.")
-
-
-    paths = []
-    missing = []
-
-    for rel_dir in rel_dirs:
-
-        csv_path = os.path.join(
-            RAW_ROOT,
-            rel_dir,
-            f"{stream}.csv"
-        )
-
-        if os.path.isfile(csv_path):
-            paths.append(csv_path)
-
-        else:
-            missing.append((rel_dir, csv_path))
-
-    print("Total executions:", len(rel_dirs))
-    print("Available files:", len(paths))
-    print("Missing files:", len(missing))
-
-    if missing:
-
-        print(
-            f"WARNING: {len(missing)} missing files "
-            f"for stream {stream}."
-        )
-
-        for rel_dir, path in missing[:5]:
-            print("Missing:", path)
-
-    if not paths:
-
+    if not os.path.isfile(csv_path):
         raise FileNotFoundError(
-            f"No CSV files found for stream {stream}."
+            f"Missing CSV file: {csv_path}"
         )
-
-
 
     raw = (
         spark.read
         .schema(EVENT_SCHEMA)
         .option("header", "false")
-        .csv(paths)
-        .withColumn(
-            "_source",
-            F.input_file_name()
-        )
+        .csv(csv_path)
     )
 
-    # Recover rel_dir from the source file path
     raw = raw.withColumn(
         "rel_dir",
-        F.regexp_extract(
-            F.col("_source"),
-            r"/dataset/(.+)/[^/]+$",
-            1
-        )
+        F.lit(execution_id)
     )
-
-
 
     valid_condition = (
         F.col("sec").isNotNull()
@@ -165,7 +78,6 @@ def ingest_stream(stream, exec_df, spark, out_root):
         valid_condition
     )
 
-
     raw = raw.withColumn(
         "win",
         F.floor(
@@ -175,7 +87,6 @@ def ingest_stream(stream, exec_df, spark, out_root):
             ) / WINDOW_S
         ).cast("long")
     )
-
 
     aggregations = [
 
@@ -203,8 +114,6 @@ def ingest_stream(stream, exec_df, spark, out_root):
         ).alias(f"{stream}_addr_range")
     ]
 
-
-
     if stream in HAS_ENTROPY:
 
         entropy_condition = (
@@ -231,14 +140,11 @@ def ingest_stream(stream, exec_df, spark, out_root):
 
         ])
 
-
     windows = (
         raw
         .groupBy("rel_dir", "win")
         .agg(*aggregations)
     )
-
-
 
     output_path = os.path.join(
         out_root,
@@ -252,16 +158,14 @@ def ingest_stream(stream, exec_df, spark, out_root):
         .parquet(output_path)
     )
 
-
     row_count = windows.count()
 
     elapsed = time.time() - start_time
 
     report = {
         "stream": stream,
-        "executions_requested": len(rel_dirs),
-        "files_found": len(paths),
-        "files_missing": len(missing),
+        "execution_id": execution_id,
+        "files_found": 1,
         "windows": row_count,
         "output_path": output_path,
         "elapsed_seconds": round(elapsed, 2)
@@ -275,7 +179,16 @@ def ingest_stream(stream, exec_df, spark, out_root):
     return report
 
 
-def ingest_all(exec_df, spark, out_root):
+def ingest_all(spark, raw_root, out_root):
+
+    if not os.path.isdir(raw_root):
+        raise FileNotFoundError(
+            f"Execution folder not found: {raw_root}"
+        )
+
+    execution_id = os.path.basename(
+        os.path.normpath(raw_root)
+    )
 
     os.makedirs(out_root, exist_ok=True)
 
@@ -285,9 +198,10 @@ def ingest_all(exec_df, spark, out_root):
 
         report[stream] = ingest_stream(
             stream=stream,
-            exec_df=exec_df,
             spark=spark,
-            out_root=out_root
+            raw_root=raw_root,
+            out_root=out_root,
+            execution_id=execution_id
         )
 
     print("\nAll streams processed.")
