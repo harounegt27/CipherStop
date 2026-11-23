@@ -1,7 +1,9 @@
 import mlflow
 import keras
+import os
+MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
 
-mlflow.set_tracking_uri("http://mlflow:5000")
+mlflow.set_tracking_uri(MLFLOW_URI)
 mlflow.set_experiment("RanS-MAP")
 
 for model_type in ["gru", "lstm"]:
