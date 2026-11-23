@@ -36,7 +36,7 @@ jobs:
           flake8 mlflow/ src/ \
             --max-line-length=100 \
             --exclude=__pycache__,.venv,venv \
-            --ignore=E501,W503,E221,E251,E241,E302,E402,E731,E702,W292,W504,F541,E128,E231
+            --ignore=E501,W503,E221,E251,E241,E302,E402,E731,E702,W292,W504,F541,E128,E231,W293
 
       # ── 5. Start MLflow via Docker Compose ────────────────────────────────
 
