@@ -22,12 +22,13 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      # ── 3. Install dependencies ────────────────────────────────────────────
+      # ── 3. Install dependenciessss ────────────────────────────────────────────
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install flake8
-          pip install mlflow==2.16.2 requests
+          pip install mlflow==2.16.2 requests keras==3.15.1 tensorflow-cpu==2.16.2
+
 
       # ── 4. Lint ────────────────────────────────────────────────────────────
       - name: Lint with flake8
@@ -38,6 +39,7 @@ jobs:
             --ignore=E501,W503,E221,E251,E241,E302,E402,E731,E702,W292,W504,F541,E128,E231
 
       # ── 5. Start MLflow via Docker Compose ────────────────────────────────
+
       - name: Start MLflow server
         run: |
           docker compose up -d mlflow
