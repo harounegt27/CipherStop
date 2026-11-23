@@ -11,7 +11,6 @@ BEST_VARIANT    = "25"
 mlflow.set_tracking_uri(MLFLOW_URI)
 client = MlflowClient()
 
-# ── 1. Find the GRU-25 run ──────────────────────────────────────────────────
 exp = client.get_experiment_by_name(EXPERIMENT_NAME)
 if exp is None:
     raise SystemExit(f"Experiment '{EXPERIMENT_NAME}' not found. Run import_to_mlflow.py first.")
@@ -38,20 +37,18 @@ print(f"   Run ID         : {run_id}")
 print(f"   F1-score       : {best_run.data.metrics.get('f1_score', 'not logged yet')}")
 print(f"   Artifact URI   : {artifact_uri}")
 
-# ── 2. Register the model ───────────────────────────────────────────────────
 print(f"\n📦 Registering model as '{MODEL_NAME}' ...")
 result = mlflow.register_model(artifact_uri, MODEL_NAME)
 model_version = result.version
 print(f"   Registered version : {model_version}")
 
-# ── 3. Transition to Production (alias-based, MLflow 2.9+) ──────────────────
 print(f"\n🚀 Setting alias 'production' ...")
 client.set_registered_model_alias(
     name    = MODEL_NAME,
     alias   = "production",
     version = model_version,
 )
-# ── 4. Add description ──────────────────────────────────────────────────────
+
 client.update_model_version(
     name        = MODEL_NAME,
     version     = model_version,
