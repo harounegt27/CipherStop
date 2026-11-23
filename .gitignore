@@ -22,10 +22,10 @@ __pycache__/
 # MLflow
 mlflow/mlflow.db
 mlflow/artifacts/*
-!mlflow/.gitkeepdata/
-checkpoints/
-mlruns/
-mlartifacts/
+!mlflow/.gitkeep
 mlflow.db
-.venv/
-__pycache__/
+backend/mlflow.db
+
+# Spark outputs
+inference_output/
+spark_test_parquet/
