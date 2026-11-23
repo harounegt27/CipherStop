@@ -1,7 +1,7 @@
 import mlflow
 from mlflow.tracking import MlflowClient
 
-MLFLOW_URI = "http://localhost:5000"
+MLFLOW_URI = "http://mlflow:5000"
 EXPERIMENT_NAME = "RanS-MAP"
 
 mlflow.set_tracking_uri(MLFLOW_URI)

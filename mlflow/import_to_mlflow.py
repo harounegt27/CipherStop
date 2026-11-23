@@ -6,7 +6,7 @@ mlflow.set_experiment("RanS-MAP")
 
 for model_type in ["gru", "lstm"]:
     for size in [10, 25, 50, 75]:
-        path = f"src/model/{model_type}_model/{model_type}_{size}_model.keras"
+        path = f"/app/src/model/{model_type}_model/{model_type}_{size}_model.keras"
         model = keras.models.load_model(path)
 
         with mlflow.start_run(run_name=f"{model_type.upper()}-{size}"):
