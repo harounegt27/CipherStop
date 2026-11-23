@@ -27,7 +27,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install flake8
-          pip install mlflow==2.16.2 requests
+          pip install mlflow==2.16.2 requests keras==3.15.1 tensorflow-cpu==2.16.2
 
       # ── 4. Lint ────────────────────────────────────────────────────────────
       - name: Lint with flake8
