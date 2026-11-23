@@ -1,7 +1,8 @@
 import mlflow
 from mlflow.tracking import MlflowClient
 
-MLFLOW_URI      = "http://mlflow:5000"
+import os
+MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
 EXPERIMENT_NAME = "RanS-MAP"
 MODEL_NAME      = "CipherStop-GRU"   # name in the Model Registry
 BEST_MODEL_TYPE = "GRU"

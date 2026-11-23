@@ -1,0 +1,73 @@
+name: CipherStop CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-register:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ────────────────────────────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── 2. Python setup ────────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      # ── 3. Install dependencies ────────────────────────────────────────────
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install flake8
+          pip install mlflow==2.16.2 requests
+
+      # ── 4. Lint ────────────────────────────────────────────────────────────
+      - name: Lint with flake8
+        run: |
+          flake8 mlflow/ src/ \
+            --max-line-length=100 \
+            --exclude=__pycache__,.venv,venv \
+            --ignore=E501,W503
+
+      # ── 5. Start MLflow via Docker Compose ────────────────────────────────
+      - name: Start MLflow server
+        run: |
+          docker compose up -d mlflow
+          echo "Waiting for MLflow to be ready..."
+          for i in {1..15}; do
+            curl -sf http://localhost:5000/health && echo "MLflow is up!" && break
+            echo "Attempt $i/15 — retrying in 5s..."
+            sleep 5
+          done
+
+      # ── 6. Import models + metrics into MLflow ────────────────────────────
+      - name: Import models and metrics into MLflow
+        run: |
+          MLFLOW_TRACKING_URI=http://localhost:5000 python mlflow/import_to_mlflow.py
+          MLFLOW_TRACKING_URI=http://localhost:5000 python mlflow/metrics.py
+
+      # ── 7. Register best model ────────────────────────────────────────────
+      - name: Register best model in MLflow Registry
+        run: |
+          MLFLOW_TRACKING_URI=http://localhost:5000 python mlflow/register_model.py
+
+      # ── 8. Verify registration ────────────────────────────────────────────
+      - name: Verify model in registry
+        run: |
+          python - <<'EOF'
+          import mlflow
+          mlflow.set_tracking_uri("http://localhost:5000")
+          client = mlflow.tracking.MlflowClient()
+          versions = client.get_latest_versions("CipherStop-GRU")
+          assert versions, "❌ No versions found in registry!"
+          v = versions[0]
+          print(f"✅ Model verified: {v.name} v{v.version}")
+          EOF

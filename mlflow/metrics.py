@@ -2,11 +2,13 @@ import mlflow
 import pandas as pd
 from pathlib import Path
 from mlflow.tracking import MlflowClient
+import os
 
+MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
 EXPERIMENT_NAME = "RanS-MAP"   # doit être IDENTIQUE à import_to_mlflow.py
 CSV_PATH = Path(__file__).resolve().parent.parent / "src" / "results" / "results_gru_lstm.csv"
 
-mlflow.set_tracking_uri("http://mlflow:5000")
+mlflow.set_tracking_uri(MLFLOW_URI)
 client = MlflowClient()
 
 exp = client.get_experiment_by_name(EXPERIMENT_NAME)
