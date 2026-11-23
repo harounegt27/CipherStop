@@ -10,7 +10,7 @@ for model_type in ["gru", "lstm"]:
     for size in [10, 25, 50, 75]:
         path = os.path.join(BASE_DIR, "src", "model", f"{model_type}_model", f"{model_type}_{size}_model.keras")
         model = keras.models.load_model(path)
-        
+
         with mlflow.start_run(run_name=f"{model_type.upper()}-{size}"):
             mlflow.set_tags({"model_type": model_type.upper(), "origin": "imported"})
             mlflow.log_param("variant", size)
