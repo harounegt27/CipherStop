@@ -1,11 +1,3 @@
-"""CipherStop - training loop with MLflow logging (KAN-27/28/29/30).
-
-Expected data layout (output of the Spark sequence-generation notebook):
-    <data-root>/10pct/  25pct/  50pct/  75pct/      (parquet folders)
-Each parquet has at least: sequence (array<array<double>>), label (0/1).
-If a `split` column (train / val / test) exists it is used; otherwise a
-stratified 70/15/15 split is made (with a warning).
-"""
 import argparse
 import os
 import random
@@ -29,7 +21,6 @@ from torch.utils.data import DataLoader, Dataset
 from src.model.lstm import RansomwareLSTM
 
 
-# --------------------------------------------------------------------- data
 class SeqDataset(Dataset):
     def __init__(self, seqs, labels):
         self.seqs, self.labels = seqs, labels
@@ -85,7 +76,7 @@ def preprocess(parts):
     return loaders_data, mean, std
 
 
-# ------------------------------------------------------------------ metrics
+#  metrics
 def compute_metrics(y_true, y_prob, thr=0.5):
     y_true, y_prob = np.asarray(y_true), np.asarray(y_prob)
     y_pred = (y_prob >= thr).astype(int)
@@ -120,7 +111,7 @@ class EarlyStopping:
     def step(self, value):
         if value > self.best:
             self.best, self.bad = value, 0
-            return True  # improved
+            return True  
         self.bad += 1
         return False
 
@@ -142,7 +133,7 @@ def log_confusion_matrix(y_true, y_prob, name, out_dir):
     mlflow.log_artifact(str(path), artifact_path="confusion_matrix")
 
 
-# ----------------------------------------------------------------- training
+#  training
 def train_one_cut(cut, args, device):
     data_path = Path(args.data_root) / f"{cut}pct"
     parts = load_cut(data_path)
@@ -203,7 +194,6 @@ def train_one_cut(cut, args, device):
             print(f"[{cut}%] epoch {epoch:03d} loss={tot/n:.4f} val_loss={val_loss:.4f} "
                   f"val_auc={vm['auc']:.4f} val_f1={vm['f1']:.4f} val_fpr={vm['fpr']:.4f}")
 
-            # KAN-29: keep the best checkpoint; KAN-28: early stopping
             monitor = vm["auc"] if not np.isnan(vm["auc"]) else -val_loss
             if stopper.step(monitor):
                 torch.save({"state_dict": model.state_dict(), "n_features": n_features,
@@ -213,7 +203,7 @@ def train_one_cut(cut, args, device):
                 print(f"Early stopping at epoch {epoch}")
                 break
 
-        # ---- reload the best model, evaluate on test, log artifacts
+        #  reload the best model, evaluate on test, log artifacts
         best = torch.load(ckpt_path, map_location=device, weights_only=False)
         model.load_state_dict(best["state_dict"])
         mlflow.log_metric("best_epoch", best["epoch"])
@@ -221,10 +211,13 @@ def train_one_cut(cut, args, device):
             loss, y, p = evaluate(model, dl, criterion, device)
             m = compute_metrics(y, p)
             mlflow.log_metrics({f"final_{split_name}_{k}": v for k, v in m.items()})
-            log_confusion_matrix(y, p, f"{cut}pct_{split_name}", ckpt_dir)  # KAN-30
-        mlflow.log_artifact(str(ckpt_path), artifact_path="checkpoints")     # KAN-29
-        # pickle format: no model signature needed (newer MLflow defaults to pt2)
-        mlflow.pytorch.log_model(model, artifact_path="model")
+            log_confusion_matrix(y, p, f"{cut}pct_{split_name}", ckpt_dir) 
+        mlflow.log_artifact(str(ckpt_path), artifact_path="checkpoints")     
+        try: 
+        except TypeError:   
+            mlflow.pytorch.log_model(model, artifact_path="model")
+        except Exception as e:
+            print("WARNING: mlflow.pytorch.log_model skipped:", str(e)[:200])
 
 
 def main():

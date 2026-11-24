@@ -1,9 +1,3 @@
-"""CipherStop - LSTM + Attention model for early ransomware detection.
-
-Input : a batch of behavioral sequences, shape (batch, seq_len, n_features),
-        plus the true length of each sequence (the rest is padding).
-Output: a detection score in [0, 1] per sequence (1 = ransomware).
-"""
 from typing import Optional, Tuple, Union
 
 import torch
@@ -12,12 +6,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 
 class Attention(nn.Module):
-    """Additive attention over the LSTM outputs.
-
-    For each time step t:  e_t = v^T tanh(W h_t)
-    Weights: alpha = softmax(e) over the *real* (non-padded) steps only.
-    Context vector: sum_t alpha_t * h_t
-    """
+ 
 
     def __init__(self, hidden_dim: int, attn_dim: int = 64):
         super().__init__()
@@ -27,11 +16,10 @@ class Attention(nn.Module):
     def forward(
         self, h: torch.Tensor, mask: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        # h: (B, T, H), mask: (B, T) True for real steps
-        scores = self.v(torch.tanh(self.proj(h))).squeeze(-1)  # (B, T)
+        scores = self.v(torch.tanh(self.proj(h))).squeeze(-1)  
         scores = scores.masked_fill(~mask, float("-inf"))
-        weights = torch.softmax(scores, dim=1)  # (B, T), padding -> 0
-        context = torch.bmm(weights.unsqueeze(1), h).squeeze(1)  # (B, H)
+        weights = torch.softmax(scores, dim=1)  
+        context = torch.bmm(weights.unsqueeze(1), h).squeeze(1)  
         return context, weights
 
 
@@ -65,7 +53,6 @@ class RansomwareLSTM(nn.Module):
     def logits(
         self, x: torch.Tensor, lengths: Optional[torch.Tensor] = None
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Raw scores before sigmoid (use these with BCEWithLogitsLoss)."""
         B, T, _ = x.shape
         if lengths is None:
             lengths = torch.full((B,), T, dtype=torch.long)
@@ -81,7 +68,7 @@ class RansomwareLSTM(nn.Module):
             x.device
         ).unsqueeze(1)
         context, weights = self.attention(out, mask)
-        logit = self.classifier(self.dropout(context)).squeeze(-1)  # (B,)
+        logit = self.classifier(self.dropout(context)).squeeze(-1)  
         return logit, weights
 
     def forward(
