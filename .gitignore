@@ -29,3 +29,4 @@ backend/mlflow.db
 # Spark outputs
 inference_output/
 spark_test_parquet/
+*.zip
