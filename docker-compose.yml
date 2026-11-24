@@ -11,31 +11,25 @@ services:
       PYTHONPATH: /app
       JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
       MLFLOW_TRACKING_URI: http://mlflow:5000
+      ALERT_THRESHOLD: "0.85"
+      SMTP_HOST: ""
+      SMTP_PORT: "587"
+      SMTP_USER: ""
+      SMTP_PASSWORD: ""
+      ALERT_EMAIL: ""
     volumes:
       - ./artifacts:/app/artifacts
       - ./data:/app/data
+      - ./src:/app/src
     depends_on:
       mlflow:
         condition: service_started
-        
-  dev:
-    build:
-      context: .
-      dockerfile: docker/DockerFile
-    container_name: cipherstop_dev
-    volumes:
-      - .:/app
-      - ./data:/app/data
-    environment:
-      - PYTHONPATH=/app
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-    ports:
-      - "8888:8888"
-    command: bash
-    stdin_open: true
-    tty: true
-    depends_on:
-      - mlflow
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   mlflow:
     image: python:3.11.9-slim
@@ -55,3 +49,9 @@ services:
       - "5000:5000"
     volumes:
       - ./mlflow:/mlflow
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5

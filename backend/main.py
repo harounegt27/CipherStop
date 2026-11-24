@@ -36,7 +36,14 @@ app = FastAPI(
     description="Ransomware detection using LSTM models",
     version="1.0.0"
 )
-
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # React dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 
