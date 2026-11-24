@@ -6,7 +6,6 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, UploadFile, File
-from pyspark.sql import SparkSession
 from backend.inference import predict_execution
 
 
@@ -47,12 +46,6 @@ app.add_middleware(
 
 
 
-spark = (
-    SparkSession.builder
-    .appName("RanSMAP-Inference")
-    .master("local[*]")
-    .getOrCreate()
-)
 
 
 
@@ -163,7 +156,6 @@ async def predict(
 
 
         results = predict_execution(
-            spark=spark,
             execution_path=str(execution_path),
             out_root=str(INFERENCE_OUTPUT_DIR),
             artifacts_dir=str(ARTIFACTS_DIR)

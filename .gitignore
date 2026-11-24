@@ -1,6 +1,5 @@
 # Data — never stored locally
-data/processed/*
-data/validated/*
+/data/
 !data/**/.gitkeep
 
 
