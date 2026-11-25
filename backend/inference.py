@@ -40,7 +40,7 @@ def load_models():
 
 
 def predict_execution(
-    spark,
+    # spark,
     execution_path,
     out_root,
     artifacts_dir
