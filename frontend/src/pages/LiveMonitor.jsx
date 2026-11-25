@@ -9,9 +9,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const THRESHOLD = 0.85;
 
 function LiveMonitor({ events }) {
+  // threshold comes from the backend (artifacts/alert_config.json), 0.85 until the first event
+  const THRESHOLD = events.length ? events[0].threshold : 0.85;
   // events are newest first -> reverse for the chart (oldest on the left)
   const chartData = [...events].reverse().map((e, i) => ({
     n: i + 1,
@@ -57,7 +58,7 @@ function LiveMonitor({ events }) {
                   y={THRESHOLD}
                   stroke="red"
                   strokeDasharray="4 4"
-                  label="threshold 0.85"
+                  label={`threshold ${THRESHOLD}`}
                 />
                 <Line type="monotone" dataKey="score" stroke="#1a56db" />
               </LineChart>
@@ -82,4 +83,4 @@ function LiveMonitor({ events }) {
   );
 }
 
-export default LiveMonitor;
+export default LiveMonitor;

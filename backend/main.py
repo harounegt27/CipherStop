@@ -1,3 +1,4 @@
+import asyncio
 import sys
 import shutil
 import tempfile
@@ -23,6 +24,8 @@ from backend.alerts import (
     build_event,
     apply_action,
     notify_email,
+    is_positive,
+    ALERT_THRESHOLD,
 )
 
 
@@ -72,6 +75,12 @@ def home():
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+
+@app.get("/config")
+def get_config():
+    """Single source of truth for the alert threshold (used by the replayer / dashboard)."""
+    return {"threshold": ALERT_THRESHOLD}
 
 
 # ── Prediction ───────────────────────────────────────────────────────────────
@@ -134,14 +143,12 @@ async def predict(
         for fraction, result in results.items():
             percentage = f"{int(fraction * 100)}%"
 
+            # same threshold as the alerts (artifacts/alert_config.json), not a hard-coded 0.5
+            positive = is_positive(result["probability"])
             predictions[percentage] = {
                 "probability": result["probability"],
-                "prediction": result["prediction"],
-                "label": (
-                    "Ransomware"
-                    if result["prediction"] == 1
-                    else "Benign"
-                ),
+                "prediction": int(positive),
+                "label": "Ransomware" if positive else "Benign",
             }
 
         # NEW: build the dashboard event, store it, broadcast it
@@ -150,7 +157,8 @@ async def predict(
         await manager.broadcast(event)
 
         if event["type"] == "alert":
-            notify_email(event)  # placeholder for Task 9 (Ayett)
+            # SMTP is blocking: run it in a thread so /predict and the WebSocket are not delayed
+            asyncio.get_running_loop().run_in_executor(None, notify_email, event)
 
         return {
             "status": "success",
@@ -209,4 +217,4 @@ if __name__ == "__main__":
         host="127.0.0.1",
         port=8000,
         reload=True,
-    )
+    )

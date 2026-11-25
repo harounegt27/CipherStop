@@ -22,7 +22,7 @@ import pandas as pd
 DEFAULT_API     = "http://localhost:8000"
 DEFAULT_DATA    = "data/test_executions"
 DEFAULT_OUT     = "simulation/results.csv"
-ALERT_THRESHOLD = 0.85
+ALERT_THRESHOLD = None   # None -> read from GET /config (same value as the dashboard / e-mail)
 
 RANSOMWARE_FAMILIES = {"Conti", "Darkside", "LockBit", "REvil", "WannaCry", "Ryuk"}
 
@@ -38,9 +38,16 @@ FIELDNAMES = [
 ]
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-def find_earliest_detection(predictions):
+def get_threshold(api_url):
+    if ALERT_THRESHOLD is not None:
+        return ALERT_THRESHOLD
+    return float(requests.get(f"{api_url}/config", timeout=10).json()["threshold"])
+
+
+def find_earliest_detection(predictions, threshold):
+    """Same rule as backend/alerts.py: first window whose score is above the threshold."""
     for pct in ["10%", "25%", "50%", "75%"]:
-        if predictions[pct]["prediction"] == 1:
+        if predictions[pct]["probability"] > threshold:
             return pct, predictions[pct]["probability"]
     return None, None
 
@@ -69,6 +76,8 @@ def send_execution(api_url, exe_path):
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def run(api_url, data_root, output_csv):
+    threshold = get_threshold(api_url)
+    print(f"alert threshold = {threshold}")
     done = set()
     if Path(output_csv).exists():
         prev = pd.read_csv(output_csv)
@@ -99,7 +108,7 @@ def run(api_url, data_root, output_csv):
 
                     try:
                         preds, elapsed = send_execution(api_url, exe_path)
-                        earliest, det_score = find_earliest_detection(preds)
+                        earliest, det_score = find_earliest_detection(preds, threshold)
 
                         row.update(
                             prob_10 = preds["10%"]["probability"],
@@ -148,4 +157,4 @@ if __name__ == "__main__":
     parser.add_argument("--data", default=DEFAULT_DATA)
     parser.add_argument("--out",  default=DEFAULT_OUT)
     args = parser.parse_args()
-    run(args.api, args.data, args.out)
+    run(args.api, args.data, args.out)

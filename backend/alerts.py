@@ -4,7 +4,28 @@ from datetime import datetime, timezone
 
 from fastapi import WebSocket
 
-ALERT_THRESHOLD = float(os.getenv("ALERT_THRESHOLD", "0.85"))
+import json
+from pathlib import Path
+
+from backend.emailer import send_alert_email
+
+CONFIG_PATH = Path(os.getenv(
+    "ALERT_CONFIG", Path(__file__).resolve().parent.parent / "artifacts" / "alert_config.json"))
+
+
+def load_threshold() -> float:
+    """Priority: env ALERT_THRESHOLD > artifacts/alert_config.json (written by
+    src/evaluation/choose_threshold.py, chosen on validation data) > 0.85 (charter default)."""
+    env = os.getenv("ALERT_THRESHOLD", "").strip()
+    if env:
+        return float(env)
+    try:
+        return float(json.loads(CONFIG_PATH.read_text())["threshold"])
+    except Exception:
+        return 0.85
+
+
+ALERT_THRESHOLD = load_threshold()
 
 FRACTIONS = ["10%", "25%", "50%", "75%"]
 
@@ -36,6 +57,10 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
+def is_positive(probability: float) -> bool:
+    return float(probability) > ALERT_THRESHOLD
+
+
 def build_event(predictions: dict, execution_name: str | None = None) -> dict:
 
     scores = {
@@ -47,7 +72,7 @@ def build_event(predictions: dict, execution_name: str | None = None) -> dict:
 
     detection_point = None
     for pct in FRACTIONS:
-        if pct in scores and scores[pct] > ALERT_THRESHOLD:
+        if pct in scores and is_positive(scores[pct]):
             detection_point = pct
             break
 
@@ -85,6 +110,9 @@ def apply_action(event_id: str, action: str) -> dict | None:
     return event
 
 
-def notify_email(event: dict) -> None:
-    """Ayettttt hdhy tache mte3ekk"""
-    pass
+def notify_email(event: dict) -> str:
+    """Send the alert e-mail (blocking: call it from a thread). Stores the outcome on the
+    event ('sent' / 'disabled' / 'failed: ...') so History can show it. Never raises."""
+    status = send_alert_email(event)
+    event["email_status"] = status
+    return status
