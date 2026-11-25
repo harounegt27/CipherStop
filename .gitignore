@@ -30,3 +30,4 @@ backend/mlflow.db
 inference_output/
 spark_test_parquet/
 *.zip
+/checkpoints
