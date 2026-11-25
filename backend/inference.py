@@ -3,7 +3,7 @@ import os
 import numpy as np
 from tensorflow.keras.models import load_model
 
-from backend.inference_preprocessing import preprocess_execution
+from backend.inference_preprocessing_fast import preprocess_fast
 BASE_DIR = os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))
 )
@@ -40,17 +40,15 @@ def load_models():
 
 
 def predict_execution(
-    spark,
+    # spark,
     execution_path,
     out_root,
     artifacts_dir
 ):
 
-    prefixes = preprocess_execution(
-        spark=spark,
-        execution_path=execution_path,
-        out_root=out_root,
-        artifacts_dir=artifacts_dir
+    prefixes = preprocess_fast(
+    execution_path=execution_path,
+    artifacts_dir=artifacts_dir
     )
 
     models = load_models()
